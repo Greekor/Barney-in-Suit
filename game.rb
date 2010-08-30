@@ -1,15 +1,24 @@
 # LINKS:  VOM ANBIETER NAME
-# RECHTS: WIE SOLL DAS TEAM HEIßEN
+# RECHTS: WIE SOLL DAS TEAM HEIï¿½EN
 
 module Teamname
+  # hash stores: bookmaker's teamname -> id
   @@index = {}
+  # hash stores: distinctive id -> unique name
   @@index_id = {}
+  # number of stores teamnames
   @@c = 0
 
+  # logs "manually" added teamnames
   @@registered_new = []
 
+  # initiates Teamnames
+  # reads them from files in "folder" (argument)
+  # filenames must be of *.names
   def Teamname.init(folder="teamnames")
+    # new hash
     index_reverse = {}
+    # XXX: don't think this is really needed
     @@index = {}
 
     Dir["#{folder}/*.names"].each {
@@ -18,11 +27,15 @@ module Teamname
       list.each {
         |line|
         line.strip!
+        # skip comments or empty lines
         next if (line[0] == "#") || (line.empty?)
         left, right = line.split(";")
 
+        # push combination in array
+        # new array ?
         index_reverse[right] = [] unless index_reverse.has_key? right
-        index_reverse[right].push right
+        # XXX: why push right?
+        # index_reverse[right].push right
         index_reverse[right].push left
       }
     }
@@ -39,6 +52,8 @@ module Teamname
     }
   end
 
+  # looks up a bookmaker's teamname / maybe adds it to index
+  # returns id
   def Teamname.lookup(team)
     if @@index.has_key? team
       @@index[team]
@@ -52,47 +67,57 @@ module Teamname
     end
   end
 
+  # returns unique name linked with id
   def Teamname.find_by_id(id)
     @@index_id[id] || "Unknown Team"
   end
 
+  # XXX: y is that required?
   def Teamname.index
     @@index
   end
 
+  # XXX: y is that required?
   def Teamname.index_id
     @@index_id
   end
 
+  # XXX: y is that required?
   def Teamname.registered_new
     @@registered_new
   end
 end
 
+# initiate Teamnnames
+# XXX: Should maybe somewhere else?
 Teamname.init
 
-# Klasse, die einen Buchmacher repräsentiert, dient eigentlich nur der Zuordnung und braucht
+# Klasse, die einen Buchmacher reprÃ¤sentiert, dient eigentlich nur der Zuordnung und braucht
 # daher auch nicht viele Methoden, eventuell kann dies besser durch Symbole wie etwa :bet356
-# gelöst werden.
+# gelÃ¶st werden
+# XXX: class Bookmaker needed?
 class Bookmaker
   def initialize
   end
 
   def to_symbol
-    # gibt sowas wie :bet365 zurück o.ä.
-    # eventuell Namensgebung überdenken, die Funktion ist evtl. schon belegt.
+    # gibt sowas wie :bet365 zurÃ¼ck o.Ã¤.
+    # eventuell Namensgebung Ã¼berdenken, die Funktion ist evtl schon belegt
   end
 end
 
-# Klasse zur Verwaltung der Teamnamen, die dafür sorgt, dass egal von welchem Buchmacher
-# (die ja verschiedene Namen für die gleichen reell existierenden Teams) intern das gleiche
-# Team gemeint ist.
+# Klasse zur Verwaltung der Teamnamen, die dafÃ¼r sorgt, dass egal von welchem Buchmacher
+# (die ja verschiedene Namen fÃ¼r die gleichen reell existierenden Teams) intern das gleiche
+# Team gemeint ist
 class Team
+  # hash: id -> Team
   @@teams = {}
+  # XXX: not used
   @@count = 0
+  
   def initialize(nameorid)
     # nameorid.is_a? Integer -> das ist die ID
-    # nameorid.is_a? String  -> herausfinden was die zugehörige ID ist, je nach bookmaker
+    # nameorid.is_a? String  -> herausfinden was die zugehÃ¶rige ID ist, je nach bookmaker
     # eventuell zur Klarheit in zwei verschiedene Methoden unterteilen (etwa: create_from_id, create_from_name)
 
     if nameorid.is_a?(Integer)
@@ -105,6 +130,10 @@ class Team
     @@teams[@uid] = self
   end
 
+  # classmethod!!
+  # team can either be an integer or a string
+  #
+  # returns Team-Object, also creates new object if necessary
   def Team.find(team)
     if (team.is_a?(Integer))
       uid = team
@@ -115,24 +144,31 @@ class Team
     @@teams[uid] || Team.new(uid)
   end
 
+  # Gibt eine ID zurÃ¼ck, die das Team reprÃ¤sentiert
   def uid
-    # Gibt eine ID zurück, die das Team repräsentiert
     @uid
   end
 
+  # returns name of team
   def name
     @name
   end
 
+  # returns information string
   def description
     "#{@name} (#{@uid})"
   end
 end
 
+
+=begin
+  Class Game
+=end
 class Game
+  # hash: hash -> Game 
   @@games = {}
 
-  # Hier sollte evtl. ein Team-Objekt (bzw. zwei) übergeben werden...
+  # TODO: Hier sollte evtl. ein Team-Objekt (bzw zwei.) Ã¼bergeben werden...
   # date + time -> timestamp ?
   def initialize(team1, team2, date = nil, time = nil)
     # Standardvariablen initialisieren
@@ -140,6 +176,8 @@ class Game
     @team1 = Team.find(team1)
     @team2 = Team.find(team2)
     @date = date
+    
+    # TODO: what about time?
 
     @bets = {}
     @hash = Game.create_hash(@team1, @team2, date)
@@ -149,24 +187,28 @@ class Game
   attr_reader :hash
 
   # find Game
+  # XXX: what arguments required?
   def Game.find_or_create(*args)
     hash = ((args.length == 3) ? Game.create_hash(*args) : args[0])
 
     @@games[hash] || ((args.length == 3) ? Game.new(*args) : nil)
   end
 
+  # class method
+  # returns hash including all games
   def Game.games
     @@games
   end
 
+  # return info-string
   def description
     "<#{@team1.description}> vs. <#{@team2.description}> on #{@date.to_s}"
   end
 
   # generiert aus den Teamnamen und Datum und evtl. Uhrzeit einen Hash, der genau dieses Spiel
-  # repräsentiert, aber keine anderen. (unabhängig von Buchmacher!)
-  # dadurch kann dann evtl. leicht geprüft werden ob das Spiel schon existiert und andere Wetten
-  # können zugeordnet werden
+  # reprÃ¤sentiert, aber keine anderen. (unabhÃ¤ngig von Buchmacher!)
+  # dadurch kann dann evtl. leicht geprÃ¼ft werden ob das Spiel schon existiert und andere Wetten
+  # kÃ¶nnen zugeordnet werden
   # eventuell eigene Funktion die nur genau dies generiert aus den genannten Eigenschaften
   def Game.create_hash(team1_arg, team2_arg, date)
     team1 = (team1_arg.is_a?(Team) ? team1_arg : Team.find(team1_arg))
@@ -174,8 +216,8 @@ class Game
     "#{team1.uid}-#{team2.uid}-#{date.hash}"
   end
 
-  # zu einem "Game" gehören (und sind für uns wichtig):
-  # - einzelne Quoten (Odds), die jeweils zu einem Buchmacher zugeordnet werden müssen
+  # zu einem "Game" gehÃ¶ren (und sind fÃ¼r uns wichtig):
+  # - einzelne Quoten (Odds), die jeweils zu einem Buchmacher zugeordnet werden mÃ¼ssen
   #   diese sind unterteilt in:
   #   - Over/Under
   #   - Moneyline
@@ -188,7 +230,7 @@ class Game
   # bsp: (Pseudocode)
   # 
   # Games.each { |game|
-  #   game.bets -> gibt dann irgendwas zurück wie:
+  #   game.bets -> gibt dann irgendwas zurÃ¼ck wie:
   #   Array [
   #     0 -> Array [  <--- eventuell anders Indexen, direkt mit dem Typ der Wetten, :overunder, :moneyline12, ...          \
   #        0 -> Bet::OverUnder [ 2.5, [ odds -> [ [bookmaker1, q1, q2], [bookmaker2, q1, q2], [bookmaker3, q1, q2] ] ] ],   |
@@ -197,19 +239,22 @@ class Game
   #        ...                                                                                                              |                     `
   #     ],                                                                                                                 /                      |
   #     1 -> Array [                                                                                                                              |
-  #        0 -> Odds::Moneyline12 [ odds -> [ Quoten für die einzelnen Buchmacher ] ]                                                             |
-  #     ],                                                                            .----------------------------------------------------------´
+  #        0 -> Odds::Moneyline12 [ odds -> [ Quoten fï¿½r die einzelnen Buchmacher ] ]                                                             |
+  #     ],                                                                            .----------------------------------------------------------ï¿½
   #     ...                                                                          /
   #   ]                                                                             |
-  #   Dann kann man nämlich einfach über dieses Array iterieren und für jedes "Subarray" die einzelnen
+  #   Dann kann man nÃ¤mlich einfach Ã¼ber dieses Array iterieren und fÃ¼r jedes "Subarray" die einzelnen
   #   Quoten in allen Permutationen vergleichen. Sonst muss ja nichts verglichen werden!
   # }
 
+  # XXX: attr_reader :bets
   def bets
     # s.o.
     @bets
   end
 
+  # creates new bet, adds it to the instance hash/array
+  # returns bet
   def bet(bettype, threshold=nil)
     case bettype
     when :moneyline12 then
@@ -225,6 +270,7 @@ class Game
     end
   end
 
+  # returns nice print-out
   def Game.niceout
     @@games.each_pair {
     |hash, game|
@@ -237,36 +283,37 @@ class Game
         when :overunder
           bet.each_pair { |threshold, overunder| puts overunder.description }
       end
-    }
+      }
     puts 
     }
   end
 end
 
 module Bet
-  # FORMULIERUNG? Wettmöglichkeit fände ich treffender... "Bet" ist ja an sich dann schon wenn man
+  # FORMULIERUNG? WettmÃ¶glichkeit fÃ¤nde ich treffender... "Bet" ist ja an sich dann schon wenn man
   # konkret gesetzt hat...
   #
-  # eine "Bet" oder "Wettmöglichkeit" hat einen bestimmten Typ, in unserem Fall:
+  # eine "Bet" oder "WettmÃ¶glichkeit" hat einen bestimmten Typ, in unserem Fall:
   # Moneyline, OverUnder oder Spread
-  # unabhängig von diesem Typ haben alle Wetten gemeinsam:
-  # - es gibt für verschiedene Buchmacher verschiedene Quoten
-  # - das Ziel dieses Programms ist, diese zu vergleichen, dies würde ich als Funktion der einzelnen
+  # unabhÃ¤ngig von diesem Typ haben alle Wetten gemeinsam:
+  # - es gibt fÃ¼r verschiedene Buchmacher verschiedene Quoten
+  # - das Ziel dieses Programms ist, diese zu vergleichen, dies wÃ¼rde ich als Funktion der einzelnen
   #   Wetttypen anlegen
   # 
 
   # Braucht man eine Klasse, aus der die einzelnen Arten geerbt werden?
+  # parent class
   class Bet
     def odds
       @odds
     end
   end
 
-  # OverUnder-Wettmöglichkeit
+  # OverUnder-WettmÃ¶glichkeit
   class OverUnder < Bet
     def initialize(threshold)
       # Eigenschaften:
-      # "threshold" (eventuell Formulierung ändern), also z.B. 2,5 Tore, 3,5 Tore, etc.
+      # "threshold" (eventuell Formulierung Ã¤ndern), also z.B. 2,5 Tore, 3,5 Tore, etc.
       @threshold = threshold
 
       # Hier ist ein Hash meiner Meinung nach angebracht, da es ja zu jedem Spiel von jedem Buchmacher nur
@@ -274,10 +321,10 @@ module Bet
       @odds = Hash.new
     end
 
-    # Diese Bet wird dann mit verschiedenen Odds gefüllt, diese haben ja immer die gleiche Form:
+    # Diese Bet wird dann mit verschiedenen Odds gefÃ¼llt, diese haben ja immer die gleiche Form:
     # 
     def add_odd(bookmaker, odd1, odd2)
-      # zur Frage ob odds lediglich in einem Array oder als Klasse die sie repräsentiert abgelegt werden
+      # zur Frage ob odds lediglich in einem Array oder als Klasse die sie reprÃ¤sentiert abgelegt werden
       # sollen, siehe unten
 
       @odds[bookmaker] = [odd1, odd2]
@@ -285,13 +332,14 @@ module Bet
       # @odds[bookmaker.to_symbol] = {:odd1 => odd1, :odd2 => odd2}
     end
 
-    # Gibt in irgendeiner Form (am besten auch ne eigene Klasse) das zurück, was wir letztendlich suchen:
-    # Die beste Wettmöglichkeit für diese, oder alle, sortiert nach ihrer Qualität
+    # Gibt in irgendeiner Form (am besten auch ne eigene Klasse) das zurï¿½ck, was wir letztendlich suchen:
+    # Die beste Wettmï¿½glichkeit fï¿½r diese, oder alle, sortiert nach ihrer Qualitï¿½t
     def best_bet
-      # erstellt zunächst Permutationen so dass jede Kombinationsmöglichkeit von Buchmachern durchge-
+      # erstellt zunï¿½chst Permutationen so dass jede Kombinationsmï¿½glichkeit von Buchmachern durchge-
       # gangen wird, speichert die berechneten Werte dann in ein Array
     end
 
+    # returns info-string
     def description
       out = "Over/Under bet with threshold #{@threshold}. Odds:"
       @odds.each_pair {
@@ -302,18 +350,17 @@ module Bet
     end
   end
 
-  # Moneyline12-Wettmöglichkeit
+  # Moneyline12-WettmÃ¶glichkeit
   class Moneyline12 < Bet
     def initialize
-      # Hier ist ein Hash meiner Meinung nach angebracht, da es ja zu jedem Spiel von jedem Buchmacher nur
-      # genau eine Quote gibt, daher kann man diesen mit dem Buchmacher indizieren
+      # hash: bookmaker -> odds-array
       @odds = Hash.new
     end
 
-    # Diese Bet wird dann mit verschiedenen Odds gefüllt, diese haben ja immer die gleiche Form:
+    # Diese Bet wird dann mit verschiedenen Odds gefÃ¼llt, diese haben ja immer die gleiche Form:
     # 
     def add_odd(bookmaker, odd1, odd2)
-      # zur Frage ob odds lediglich in einem Array oder als Klasse die sie repräsentiert abgelegt werden
+      # zur Frage ob odds lediglich in einem Array oder als Klasse die sie reprï¿½sentiert abgelegt werden
       # sollen, siehe unten
 
       
@@ -322,13 +369,14 @@ module Bet
       # @odds[bookmaker.to_symbol] = {:odd1 => odd1, :odd2 => odd2}
     end
 
-    # Gibt in irgendeiner Form (am besten auch ne eigene Klasse) das zurück, was wir letztendlich suchen:
-    # Die beste Wettmöglichkeit für diese, oder alle, sortiert nach ihrer Qualität
+    # Gibt in irgendeiner Form (am besten auch ne eigene Klasse) das zurï¿½ck, was wir letztendlich suchen:
+    # Die beste Wettmï¿½glichkeit fï¿½r diese, oder alle, sortiert nach ihrer Qualitï¿½t
     def best_bet
-      # erstellt zunächst Permutationen so dass jede Kombinationsmöglichkeit von Buchmachern durchge-
+      # erstellt zunï¿½chst Permutationen so dass jede Kombinationsmï¿½glichkeit von Buchmachern durchge-
       # gangen wird, speichert die berechneten Werte dann in ein Array
     end
 
+    # returns info-string
     def description
       out = "Moneyline (1-2) bet. Odds:"
       @odds.each_pair {
@@ -339,18 +387,17 @@ module Bet
     end
   end
 
-  # Moneyline1X2-Wettmöglichkeit
+  # Moneyline1X2-Wettmï¿½glichkeit
   class Moneyline1X2 < Bet
     def initialize
-      # Hier ist ein Hash meiner Meinung nach angebracht, da es ja zu jedem Spiel von jedem Buchmacher nur
-      # genau eine Quote gibt, daher kann man diesen mit dem Buchmacher indizieren
+     # hash: bookmaker -> odds-array
       @odds = Hash.new
     end
 
-    # Diese Bet wird dann mit verschiedenen Odds gefüllt, diese haben ja immer die gleiche Form:
+    # Diese Bet wird dann mit verschiedenen Odds gefï¿½llt, diese haben ja immer die gleiche Form:
     # 
     def add_odd(bookmaker, odd1, oddX, odd2)
-      # zur Frage ob odds lediglich in einem Array oder als Klasse die sie repräsentiert abgelegt werden
+      # zur Frage ob odds lediglich in einem Array oder als Klasse die sie reprï¿½sentiert abgelegt werden
       # sollen, siehe unten
 
       
@@ -359,13 +406,14 @@ module Bet
       # @odds[bookmaker.to_symbol] = {:odd1 => odd1, :oddX => oddX, :odd2 => odd2}
     end
 
-    # Gibt in irgendeiner Form (am besten auch ne eigene Klasse) das zurück, was wir letztendlich suchen:
-    # Die beste Wettmöglichkeit für diese, oder alle, sortiert nach ihrer Qualität
+    # Gibt in irgendeiner Form (am besten auch ne eigene Klasse) das zurï¿½ck, was wir letztendlich suchen:
+    # Die beste Wettmï¿½glichkeit fï¿½r diese, oder alle, sortiert nach ihrer Qualitï¿½t
     def best_bet
-      # erstellt zunächst Permutationen so dass jede Kombinationsmöglichkeit von Buchmachern durchge-
+      # erstellt zunï¿½chst Permutationen so dass jede Kombinationsmï¿½glichkeit von Buchmachern durchge-
       # gangen wird, speichert die berechneten Werte dann in ein Array
     end
 
+    # returns info-string
     def description
       out = "Moneyline (1X2) bet. Odds:"
       @odds.each_pair {
@@ -377,15 +425,15 @@ module Bet
   end
 end
 
-# Braucht man für die Odds selbst eine eigene Klasse?
-# Insofern, dass alles bis jetzt Objekt-Orientiert dargestellt wurde wäre es eventuell sinnvoll, allerdings
-# brauchen die Odds selbst ja keine eigenen Funktionen o.ä.
+# Braucht man fï¿½r die Odds selbst eine eigene Klasse?
+# Insofern, dass alles bis jetzt Objekt-Orientiert dargestellt wurde wï¿½re es eventuell sinnvoll, allerdings
+# brauchen die Odds selbst ja keine eigenen Funktionen o.ï¿½.
 
 
 ## Verwaltung generell ##
 
 # Da muss ich mich nun Einlesen, wie das aussieht mit Modulen und Singletons, globale Variablen und sowas,
-# denn im Endeffekt will ich ja mit dem Scraper das machen können:
+# denn im Endeffekt will ich ja mit dem Scraper das machen kï¿½nnen:
 # [Pseudocode]
 #
 # ...
@@ -397,6 +445,6 @@ end
 ## Wie wird das ganze nun gespeichert und gelesen? ##
 
 #
-# Die einzelnen Scraper suchen für die gesammelten Daten zunächst durch den Teamnamen/Timestamp-Hash das passende
-# Spiel heraus und fügen ihre Quoten zu den jeweiligen Wetten hinzu
+# Die einzelnen Scraper suchen fï¿½r die gesammelten Daten zunï¿½chst durch den Teamnamen/Timestamp-Hash das passende
+# Spiel heraus und fï¿½gen ihre Quoten zu den jeweiligen Wetten hinzu
 #

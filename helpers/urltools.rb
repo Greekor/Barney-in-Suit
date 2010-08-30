@@ -3,6 +3,8 @@ require 'uri'
 require 'net/http'
 require 'net/https'
 
+# sends a post request
+# returns data from request, or error-code
 def post_request(url, postbody, headers={})
   url = URI.parse(url)
   req = Net::HTTP::Post.new(url.path)
@@ -24,6 +26,8 @@ def post_request(url, postbody, headers={})
   end
 end
 
+# sends a get request
+# returns data from request, or error-code
 def get_request(url, headers={}, use_ssl=false)
   url = URI.parse(url)
   req = Net::HTTP::Get.new(url.path + (url.query.empty? ? '' : '?' + url.query))
@@ -52,6 +56,7 @@ class CGI
   end
 end
 
+# XXX: somewhere used?
 def geturl(url)
   res = Net::HTTP.get_response(URI.parse(url))
   case res

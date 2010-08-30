@@ -1,8 +1,12 @@
-class Bet365Scraper
-  def sport2id(sport)
-    return @bet365_sportids[sport]
-  end
+=begin
+  Scraper Class for Bet365
 
+  contains Bet365 specific scraping tools
+=end
+
+class Bet365Scraper
+
+  # class constructor
   def initialize(sports)
     @sports = sports
     @bet365_sportids = {
@@ -44,14 +48,20 @@ class Bet365Scraper
 
     @games = {}
   end
-
+  
+  def sport2id(sport)
+    return @bet365_sportids[sport]
+  end
+  
+  # get odds for each sport contained in @sports  
   def get_odds()
     @sports.each {
       |sport|
-      puts("Hole #{sport}-Daten von Expekt")
+      puts("Hole #{sport}-Daten von Bet365")
       sportid = sport2id(sport)
       @games[sportid] = []
 
+      # if sport invalid => next iteration
       next if sportid == -1
 
       query = @queryformat % sportid

@@ -1,4 +1,11 @@
+=begin
+  Scraper Class for PinnacleSports
+
+  contains PinnacleSports specific scraping tools
+=end
 class PinnacleScraper
+  
+  # class constructor
 	def initialize(sports)
 		@sports = sports
 		@sporturls = {
@@ -11,6 +18,7 @@ class PinnacleScraper
 		@games = {}
 	end
 
+  # get odds for each sport in @sports
 	def get_odds
 		headers = {
 		    'Cookie' => 'PriceStyle=decimal'
@@ -20,9 +28,12 @@ class PinnacleScraper
 			puts("Hole #{name}-Daten von Pinnaclesports")
 			$stdout.flush
 			text = ""
+      # get data using a post request
 			post_request(@sporturls[name], "", headers) { |string|
 				text = text + string
 			}
+      
+      # TODO: change so all kind of sports are possible?
       matches = text.scan(@reg_expr['Baseball/MLB'])
       matches.map! {
         |match|
@@ -72,6 +83,7 @@ class PinnacleScraper
 		end
 	end
 
+  # stores odds
   def register_odds
     @games.each_pair {
       |sport, games2|

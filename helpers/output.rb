@@ -1,3 +1,5 @@
+# prints block to filename
+# XXX: used?
 def out(filename)
   File.open(filename, "w") { |file|
     $ident = 0
@@ -5,6 +7,8 @@ def out(filename)
   }
 end
 
+# some kind of XML output
+# XXX: used?
 def tag(name, *args)
   items = args[0] || {}
   if block_given?
